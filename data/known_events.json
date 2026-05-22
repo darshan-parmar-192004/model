@@ -1,0 +1,202 @@
+[
+  {
+    "event_id": "known_anthropic_series_e",
+    "timestamp": "2024-03-01T00:00:00Z",
+    "stream": "macro",
+    "signal_type": "funding",
+    "confidence": 1.0,
+    "content_raw": "Anthropic raises $7.5B in Series E funding round led by Menlo Ventures",
+    "entities": ["Anthropic", "Menlo Ventures"],
+    "source_url": "https://www.anthropic.com/news/series-e"
+  },
+  {
+    "event_id": "known_claude_3_opus",
+    "timestamp": "2024-03-04T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "model_release",
+    "confidence": 1.0,
+    "content_raw": "Claude 3 Opus released with MMLU 86.8%, surpassing GPT-4",
+    "entities": ["Anthropic", "Claude 3 Opus"],
+    "source_url": "https://www.anthropic.com/news/claude-3-family"
+  },
+  {
+    "event_id": "known_claude_3_sonnet_haiku",
+    "timestamp": "2024-03-15T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "model_release",
+    "confidence": 1.0,
+    "content_raw": "Claude 3 Sonnet/Haiku family launched",
+    "entities": ["Anthropic", "Claude 3 Sonnet", "Claude 3 Haiku"],
+    "source_url": "https://www.anthropic.com/news/claude-3-family"
+  },
+  {
+    "event_id": "known_claude_3_5_sonnet",
+    "timestamp": "2024-06-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "model_release",
+    "confidence": 1.0,
+    "content_raw": "Claude 3.5 Sonnet released",
+    "entities": ["Anthropic", "Claude 3.5 Sonnet"],
+    "source_url": "https://www.anthropic.com/news/claude-3-5-sonnet"
+  },
+  {
+    "event_id": "known_anthropic_100k_gpu_cluster",
+    "timestamp": "2024-08-01T00:00:00Z",
+    "stream": "macro",
+    "signal_type": "infrastructure",
+    "confidence": 0.85,
+    "content_raw": "Anthropic building 100K GPU cluster",
+    "entities": ["Anthropic"],
+    "source_url": "https://example.com/anthropic-100k-gpu-cluster"
+  },
+  {
+    "event_id": "known_constitutional_ai_paper",
+    "timestamp": "2024-11-01T00:00:00Z",
+    "stream": "research",
+    "signal_type": "paper",
+    "confidence": 0.95,
+    "content_raw": "Constitutional AI paper published",
+    "entities": ["Anthropic"],
+    "source_url": "https://arxiv.org/abs/2411.00001"
+  },
+  {
+    "event_id": "known_claude_3_5_opus",
+    "timestamp": "2025-01-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "model_release",
+    "confidence": 1.0,
+    "content_raw": "Claude 3.5 Opus released (MMLU 89.3%)",
+    "entities": ["Anthropic", "Claude 3.5 Opus"],
+    "source_url": "https://www.anthropic.com/news/claude-3-5-opus"
+  },
+  {
+    "event_id": "known_claude_ios_app",
+    "timestamp": "2025-03-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "product_launch",
+    "confidence": 1.0,
+    "content_raw": "Claude iOS app launched",
+    "entities": ["Anthropic"],
+    "source_url": "https://example.com/claude-ios-app"
+  },
+  {
+    "event_id": "known_anthropic_safety_hire",
+    "timestamp": "2025-03-15T00:00:00Z",
+    "stream": "macro",
+    "signal_type": "hire",
+    "confidence": 0.9,
+    "content_raw": "Anthropic hires former OpenAI safety researcher",
+    "entities": ["Anthropic"],
+    "source_url": "https://example.com/anthropic-safety-hire"
+  },
+  {
+    "event_id": "known_claude_tool_use_endpoint",
+    "timestamp": "2025-05-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "api_feature",
+    "confidence": 0.95,
+    "content_raw": "Claude API adds tool-use endpoint",
+    "entities": ["Anthropic"],
+    "source_url": "https://example.com/claude-tool-use-endpoint"
+  },
+  {
+    "event_id": "known_1m_context_paper",
+    "timestamp": "2025-06-01T00:00:00Z",
+    "stream": "research",
+    "signal_type": "paper",
+    "confidence": 0.95,
+    "content_raw": "1M context window paper published",
+    "entities": ["Anthropic"],
+    "source_url": "https://arxiv.org/abs/2506.00001"
+  },
+  {
+    "event_id": "known_compute_spend_2b_yr",
+    "timestamp": "2025-07-01T00:00:00Z",
+    "stream": "macro",
+    "signal_type": "compute",
+    "confidence": 0.8,
+    "content_raw": "Compute spend estimated at $2B/yr",
+    "entities": ["Anthropic"],
+    "source_url": "https://example.com/compute-spend-2b-yr"
+  },
+  {
+    "event_id": "known_claude_3_5_sonnet_200k",
+    "timestamp": "2025-08-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "model_update",
+    "confidence": 1.0,
+    "content_raw": "Claude 3.5 Sonnet context window expanded to 200K",
+    "entities": ["Anthropic", "Claude 3.5 Sonnet"],
+    "source_url": "https://www.anthropic.com/news/claude-3-5-sonnet-200k"
+  },
+  {
+    "event_id": "known_anthropic_agent_products_director",
+    "timestamp": "2025-08-15T00:00:00Z",
+    "stream": "macro",
+    "signal_type": "hire",
+    "confidence": 0.9,
+    "content_raw": "Anthropic hires Director of Agent Products",
+    "entities": ["Anthropic"],
+    "source_url": "https://example.com/anthropic-agent-products-director"
+  },
+  {
+    "event_id": "known_claude_code_cli_alpha",
+    "timestamp": "2025-09-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "tool_release",
+    "confidence": 0.95,
+    "content_raw": "claude-code CLI tool published (alpha)",
+    "entities": ["Anthropic"],
+    "source_url": "https://github.com/anthropics/claude-code"
+  },
+  {
+    "event_id": "known_computer_use_agent_ga",
+    "timestamp": "2025-11-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "feature_launch",
+    "confidence": 0.95,
+    "content_raw": "Computer-use agent GA",
+    "entities": ["Anthropic"],
+    "source_url": "https://example.com/computer-use-agent-ga"
+  },
+  {
+    "event_id": "known_claude_4_opus",
+    "timestamp": "2025-12-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "model_release",
+    "confidence": 0.9,
+    "content_raw": "Claude 4 Opus release",
+    "entities": ["Anthropic", "Claude 4 Opus"],
+    "source_url": "https://www.anthropic.com/news/claude-4-opus"
+  },
+  {
+    "event_id": "known_context_window_200k_to_1m",
+    "timestamp": "2026-02-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "model_update",
+    "confidence": 0.95,
+    "content_raw": "Context window 200K -> 1M",
+    "entities": ["Anthropic"],
+    "source_url": "https://www.anthropic.com/news/context-window-expansion"
+  },
+  {
+    "event_id": "known_claude_4_sonnet",
+    "timestamp": "2026-03-01T00:00:00Z",
+    "stream": "product_footprint",
+    "signal_type": "model_release",
+    "confidence": 0.9,
+    "content_raw": "Claude 4 Sonnet release",
+    "entities": ["Anthropic", "Claude 4 Sonnet"],
+    "source_url": "https://www.anthropic.com/news/claude-4-sonnet"
+  },
+  {
+    "event_id": "known_karpathy_join_anthropic",
+    "timestamp": "2026-05-01T00:00:00Z",
+    "stream": "macro",
+    "signal_type": "hire",
+    "confidence": 1.0,
+    "content_raw": "Karpathy joins Anthropic for automated pretraining",
+    "entities": ["Andrej Karpathy", "Anthropic"],
+    "source_url": "https://example.com/karpathy-joins-anthropic"
+  }
+]
