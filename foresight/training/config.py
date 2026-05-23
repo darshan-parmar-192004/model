@@ -76,8 +76,7 @@ class ForesightTrainingConfig:
             "save_strategy": "steps",
             "save_steps": self.save_steps,
             "save_total_limit": self.save_total_limit,
-            "fp16": False,  # Disabled for 4-bit quantized models
-            "bf16": True,   # Use bf16 for quantized models (better compatibility)
+            "fp16": True,
             "gradient_checkpointing": True,
             "max_grad_norm": self.max_grad_norm,
             "optim": self.optim,
