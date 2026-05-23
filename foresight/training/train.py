@@ -74,6 +74,10 @@ def setup_model_and_tokenizer(config):
         **model_kwargs,
     )
     
+    # Set max_length in model config for TRL compatibility
+    if hasattr(model.config, 'max_position_embeddings'):
+        model.config.max_length = model.config.max_position_embeddings
+    
     # Prepare model for k-bit training
     model = prepare_model_for_kbit_training(model)
     
@@ -164,7 +168,6 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        dataset_text_field="text",
     )
     
     # Train

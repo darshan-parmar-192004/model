@@ -23,6 +23,12 @@ class ForesightTrainingConfig:
         "q_proj", "k_proj", "v_proj", "o_proj",
         "gate_proj", "up_proj", "down_proj",
     ])
+    
+    # Llama-3 specific LoRA targets (uncomment if needed)
+    # lora_target_modules: List[str] = field(default_factory=lambda: [
+    #     "q_proj", "k_proj", "v_proj", "o_proj",
+    #     "gate_up_proj", "down_proj",
+    # ])
 
     # 4-bit quantization
     use_4bit: bool = True
