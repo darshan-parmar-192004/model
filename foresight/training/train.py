@@ -46,21 +46,32 @@ def setup_model_and_tokenizer(config):
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import prepare_model_for_kbit_training
     
-    # BitsAndBytesConfig for 4-bit quantization
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
-    )
+    # Check if model is a pre-quantized Unsloth model
+    is_unsloth = "unsloth" in config.model_id.lower()
+    
+    # Only use quantization_config for non-pre-quantized models
+    if not is_unsloth:
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+        )
+    else:
+        bnb_config = None
     
     # Load model
+    model_kwargs = {
+        "device_map": "auto",
+        "dtype": torch.float16,
+        "use_cache": False,
+    }
+    if bnb_config is not None:
+        model_kwargs["quantization_config"] = bnb_config
+    
     model = AutoModelForCausalLM.from_pretrained(
         config.model_id,
-        quantization_config=bnb_config,
-        device_map="auto",
-        dtype=torch.float16,
-        use_cache=False,
+        **model_kwargs,
     )
     
     # Prepare model for k-bit training
@@ -179,19 +190,30 @@ def load_foresight_model(model_path: str, base_model_id: str = "meta-llama/Meta-
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import PeftModel
     
-    # Load quantized model
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
-    )
+    # Check if model is a pre-quantized Unsloth model
+    is_unsloth = "unsloth" in base_model_id.lower()
+    
+    # Only use quantization_config for non-pre-quantized models
+    if not is_unsloth:
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+        )
+    else:
+        bnb_config = None
+    
+    model_kwargs = {
+        "device_map": "auto",
+        "dtype": torch.float16,
+    }
+    if bnb_config is not None:
+        model_kwargs["quantization_config"] = bnb_config
     
     model = AutoModelForCausalLM.from_pretrained(
         base_model_id,
-        quantization_config=bnb_config,
-        device_map="auto",
-        dtype=torch.float16,
+        **model_kwargs,
     )
     
     # Load LoRA adapter
