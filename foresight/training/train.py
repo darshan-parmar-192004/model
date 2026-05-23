@@ -136,7 +136,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         raise ImportError("Training dependencies not installed.")
     
     from transformers import TrainingArguments
-    from trl import SFTTrainer
+    from trl import SFTTrainer, SFTConfig
     from datasets import load_dataset
     
     # Setup model and tokenizer
@@ -158,8 +158,8 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     if val_dataset:
         val_dataset = val_dataset.map(lambda x: format_foresight_sample(x, tokenizer))
     
-    # Create training arguments
-    training_args = TrainingArguments(**config.to_training_args_dict())
+    # Create training arguments - use SFTConfig for newer TRL
+    training_args = SFTConfig(**config.to_training_args_dict())
     
     # Create trainer
     logger.info("Creating trainer...")
@@ -168,6 +168,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
+        processing_class=tokenizer,
     )
     
     # Train
