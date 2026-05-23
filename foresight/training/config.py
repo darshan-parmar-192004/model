@@ -12,7 +12,7 @@ class ForesightTrainingConfig:
     """Configuration for QLoRA training of Foresight model."""
 
     # Model settings
-    model_id: str = "meta-llama/Meta-Llama-3-8B"
+    model_id: str = "unsloth/llama-3-8b-Instruct-bnb-4bit"
     output_dir: str = "models/foresight_final/"
 
     # QLoRA settings - lower rank for 8B model
