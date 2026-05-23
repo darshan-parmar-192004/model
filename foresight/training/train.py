@@ -164,9 +164,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        max_seq_length=config.max_seq_length,
         dataset_text_field="text",
-        packing=config.packing,
     )
     
     # Train
