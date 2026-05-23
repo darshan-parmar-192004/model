@@ -54,6 +54,7 @@ class ForesightTrainingConfig:
     save_total_limit: int = 3
     report_to: str = "none"
     run_name: str = "foresight-v1"
+    warmup_steps: int = 10  # Explicitly set warmup steps instead of warmup_ratio
 
     def to_training_args_dict(self) -> dict:
         """Convert to TrainingArguments dictionary."""
@@ -64,7 +65,7 @@ class ForesightTrainingConfig:
             "num_train_epochs": self.num_train_epochs,
             "learning_rate": self.learning_rate,
             "lr_scheduler_type": self.lr_scheduler,
-            "warmup_ratio": self.warmup_ratio,
+            "warmup_steps": self.warmup_steps,
             "logging_steps": self.logging_steps,
             "save_strategy": "steps",
             "save_steps": self.save_steps,

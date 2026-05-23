@@ -59,7 +59,7 @@ def setup_model_and_tokenizer(config):
         config.model_id,
         quantization_config=bnb_config,
         device_map="auto",
-        torch_dtype=torch.float16,
+        dtype=torch.float16,
         use_cache=False,
     )
     
@@ -150,7 +150,6 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     logger.info("Creating trainer...")
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
@@ -192,7 +191,7 @@ def load_foresight_model(model_path: str, base_model_id: str = "meta-llama/Meta-
         base_model_id,
         quantization_config=bnb_config,
         device_map="auto",
-        torch_dtype=torch.float16,
+        dtype=torch.float16,
     )
     
     # Load LoRA adapter
