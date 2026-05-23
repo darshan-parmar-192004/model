@@ -133,7 +133,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     logger.info("Loading datasets...")
     train_dataset = load_dataset("json", data_files=train_dataset_path, split="train")
     if val_dataset_path:
-        val_dataset = load_dataset("json", data_files=val_dataset_path, split="validation")
+        val_dataset = load_dataset("json", data_files=val_dataset_path, split="train")
     else:
         val_dataset = None
     
