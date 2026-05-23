@@ -10,11 +10,11 @@ from typing import List, Optional
 @dataclass
 class ForesightTrainingConfig:
     """Configuration for QLoRA training of Foresight model."""
-    
+
     # Model settings
     model_id: str = "meta-llama/Meta-Llama-3-8B"
     output_dir: str = "models/foresight_final/"
-    
+
     # QLoRA settings - lower rank for 8B model
     lora_r: int = 16
     lora_alpha: int = 32
@@ -23,13 +23,13 @@ class ForesightTrainingConfig:
         "q_proj", "k_proj", "v_proj", "o_proj",
         "gate_proj", "up_proj", "down_proj",
     ])
-    
+
     # 4-bit quantization
     use_4bit: bool = True
     bnb_4bit_quant_type: str = "nf4"
     use_double_quant: bool = True
     compute_dtype: str = "float16"
-    
+
     # Training settings - scaled for 8B model on 4x GPU
     per_device_train_batch_size: int = 4
     gradient_accumulation_steps: int = 8
@@ -39,22 +39,22 @@ class ForesightTrainingConfig:
     warmup_ratio: float = 0.03
     max_grad_norm: float = 1.0
     optim: str = "paged_adamw_8bit"
-    
+
     # Context (reduced for 8B model efficiency)
     max_context_length: int = 8192
-    
+
     # SFTTrainer specific
     packing: bool = True
     dataset_text_field: str = "text"
     max_seq_length: int = 8192
-    
+
     # Logging
     logging_steps: int = 25
     save_steps: int = 200
     save_total_limit: int = 3
-    report_to: str = "wandb"
+    report_to: str = "none"
     run_name: str = "foresight-v1"
-    
+
     def to_training_args_dict(self) -> dict:
         """Convert to TrainingArguments dictionary."""
         return {
@@ -74,10 +74,7 @@ class ForesightTrainingConfig:
             "max_grad_norm": self.max_grad_norm,
             "optim": self.optim,
             "remove_unused_columns": False,
-            "dataloader_num_workers": 8,
-            "ddp_find_unused_parameters": False,
-            "report_to": self.report_to,
+            "dataloader_num_workers": 2,
+            "report_to": "none",
             "run_name": self.run_name,
-            "model_max_length": self.max_context_length,
-            "gradient_checkpointing_kwargs": {"use_reentrant": False},
         }
