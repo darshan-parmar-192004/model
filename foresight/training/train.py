@@ -24,7 +24,7 @@ def _import_training_deps():
         import peft
         from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
         import trl
-        from trl import SFTTrainer
+        from trl import SFTTrainer, SFTConfig
         import datasets
         import bitsandbytes
         return True
@@ -155,13 +155,13 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     
     # Format datasets
     logger.info("Formatting datasets...")
-    train_dataset = train_dataset.map(lambda x: format_foresight_sample(x, tokenizer))
+    train_dataset = train_dataset.map(lambda x: format_foresight_sample(x, tokenizer), remove_columns=train_dataset.column_names)
     if val_dataset:
-        val_dataset = val_dataset.map(lambda x: format_foresight_sample(x, tokenizer))
-    
+        val_dataset = val_dataset.map(lambda x: format_foresight_sample(x, tokenizer), remove_columns=val_dataset.column_names)
+
     # Create training arguments - use SFTConfig for newer TRL
     training_args = SFTConfig(**config.to_training_args_dict())
-    
+
     # Create trainer
     logger.info("Creating trainer...")
     trainer = SFTTrainer(
