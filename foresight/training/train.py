@@ -99,6 +99,9 @@ def setup_model_and_tokenizer(config):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    # Set model_max_length so SFTTrainer fallback uses our value
+    tokenizer.model_max_length = config.max_seq_length
+
     return model, tokenizer
 
 
@@ -184,7 +187,6 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         formatting_func=formatting_func,
-        max_seq_length=config.max_seq_length,
     )
 
     # Train
