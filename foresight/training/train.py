@@ -82,9 +82,8 @@ def setup_model_and_tokenizer(config):
         **model_kwargs,
     )
 
-    # Set max_length in model config for TRL compatibility
-    if hasattr(model.config, "max_position_embeddings"):
-        model.config.max_length = model.config.max_position_embeddings
+    # Set max_length to user-requested seq length for SFTTrainer fallback
+    model.config.max_length = config.max_seq_length
 
     # Prepare model for k-bit training
     model = prepare_model_for_kbit_training(model)
@@ -185,6 +184,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         formatting_func=formatting_func,
+        max_seq_length=config.max_seq_length,
     )
 
     # Train

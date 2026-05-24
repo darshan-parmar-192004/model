@@ -58,9 +58,13 @@ class ForesightTrainingConfig:
     max_seq_length: int = 1024
     max_context_length: int = 1024
 
+    # Mixed precision (off by default for 4-bit models — precision is internal)
+    fp16: bool = False
+    bf16: bool = False
+
     def to_training_args_dict(self) -> dict:
         """Convert to TrainingArguments dictionary."""
-        return {
+        d = {
             "output_dir": self.output_dir,
             "per_device_train_batch_size": self.per_device_train_batch_size,
             "gradient_accumulation_steps": self.gradient_accumulation_steps,
@@ -72,7 +76,6 @@ class ForesightTrainingConfig:
             "save_strategy": "steps",
             "save_steps": self.save_steps,
             "save_total_limit": self.save_total_limit,
-            "fp16": True,
             "gradient_checkpointing": True,
             "max_grad_norm": self.max_grad_norm,
             "optim": self.optim,
@@ -81,3 +84,8 @@ class ForesightTrainingConfig:
             "report_to": "none",
             "run_name": self.run_name,
         }
+        if self.fp16:
+            d["fp16"] = True
+        if self.bf16:
+            d["bf16"] = True
+        return d
