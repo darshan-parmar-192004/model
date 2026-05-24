@@ -19,10 +19,17 @@ class ForesightTrainingConfig:
     lora_r: int = 16
     lora_alpha: int = 32
     lora_dropout: float = 0.1
-    lora_target_modules: List[str] = field(default_factory=lambda: [
-        "q_proj", "k_proj", "v_proj", "o_proj",
-        "gate_proj", "up_proj", "down_proj",
-    ])
+    lora_target_modules: List[str] = field(
+        default_factory=lambda: [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ]
+    )
 
     # 4-bit quantization
     use_4bit: bool = True
@@ -47,6 +54,10 @@ class ForesightTrainingConfig:
     run_name: str = "foresight-v1"
     warmup_steps: int = 10  # Explicitly set warmup steps
 
+    # Sequence length settings
+    max_seq_length: int = 1024
+    max_context_length: int = 1024
+
     def to_training_args_dict(self) -> dict:
         """Convert to TrainingArguments dictionary."""
         return {
@@ -69,4 +80,5 @@ class ForesightTrainingConfig:
             "dataloader_num_workers": 2,
             "report_to": "none",
             "run_name": self.run_name,
+            "max_seq_length": self.max_seq_length,
         }

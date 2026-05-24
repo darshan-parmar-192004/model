@@ -11,6 +11,7 @@ from typing import Tuple, Optional, List, Dict
 import torch
 from torch import nn
 
+
 # Lazy imports to avoid import-time failures
 def _import_training_deps():
     """Lazy import training dependencies."""
@@ -18,8 +19,10 @@ def _import_training_deps():
     try:
         import transformers
         from transformers import (
-            AutoModelForCausalLM, AutoTokenizer,
-            TrainingArguments, BitsAndBytesConfig
+            AutoModelForCausalLM,
+            AutoTokenizer,
+            TrainingArguments,
+            BitsAndBytesConfig,
         )
         import peft
         from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
@@ -27,28 +30,33 @@ def _import_training_deps():
         from trl import SFTTrainer, SFTConfig
         import datasets
         import bitsandbytes
+
         return True
     except ImportError as e:
         logging.warning(f"Training dependencies not installed: {e}")
         return False
 
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def setup_model_and_tokenizer(config):
     """
     Setup model and tokenizer for training.
     """
     if not _import_training_deps():
-        raise ImportError("Training dependencies not installed. Install with: pip install transformers peft trl datasets bitsandbytes")
-    
+        raise ImportError(
+            "Training dependencies not installed. Install with: pip install transformers peft trl datasets bitsandbytes"
+        )
+
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import prepare_model_for_kbit_training
-    
+
     # Check if model is a pre-quantized Unsloth model
     is_unsloth = "unsloth" in config.model_id.lower()
-    
+
     # Only use quantization_config for non-pre-quantized models
     if not is_unsloth:
         bnb_config = BitsAndBytesConfig(
@@ -59,7 +67,7 @@ def setup_model_and_tokenizer(config):
         )
     else:
         bnb_config = None
-    
+
     # Load model
     model_kwargs = {
         "device_map": "auto",
@@ -68,38 +76,39 @@ def setup_model_and_tokenizer(config):
     }
     if bnb_config is not None:
         model_kwargs["quantization_config"] = bnb_config
-    
+
     model = AutoModelForCausalLM.from_pretrained(
         config.model_id,
         **model_kwargs,
     )
-    
+
     # Set max_length in model config for TRL compatibility
-    if hasattr(model.config, 'max_position_embeddings'):
+    if hasattr(model.config, "max_position_embeddings"):
         model.config.max_length = model.config.max_position_embeddings
-    
+
     # Prepare model for k-bit training
     model = prepare_model_for_kbit_training(model)
-    
+
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
         config.model_id,
         padding_side="right",
         add_eos_token=True,
     )
-    
+
     # Set pad token if not set
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    
+
     return model, tokenizer
+
 
 def apply_lora(model, config):
     """
     Apply LoRA adaptation to the model.
     """
     from peft import LoraConfig, get_peft_model
-    
+
     lora_config = LoraConfig(
         r=config.lora_r,
         lora_alpha=config.lora_alpha,
@@ -108,11 +117,12 @@ def apply_lora(model, config):
         bias="none",
         task_type="CAUSAL_LM",
     )
-    
+
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
-    
+
     return model
+
 
 def format_foresight_sample(example: Dict, tokenizer) -> Dict:
     """
@@ -120,13 +130,19 @@ def format_foresight_sample(example: Dict, tokenizer) -> Dict:
     Format: <s>[INST] {instruction} [/INST] {output}</s>
     """
     messages = [
-        {"role": "system", "content": "You are Foresight, a predictive model forecasting AI industry events."},
+        {
+            "role": "system",
+            "content": "You are Foresight, a predictive model forecasting AI industry events.",
+        },
         {"role": "user", "content": example["instruction"]},
         {"role": "assistant", "content": example["output"]},
     ]
-    
-    text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+
+    text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=False
+    )
     return {"text": text}
+
 
 def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     """
@@ -134,17 +150,17 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     """
     if not _import_training_deps():
         raise ImportError("Training dependencies not installed.")
-    
+
     from transformers import TrainingArguments
     from trl import SFTTrainer, SFTConfig
     from datasets import load_dataset
-    
+
     # Setup model and tokenizer
     logger.info("Setting up model and tokenizer...")
     model, tokenizer = setup_model_and_tokenizer(config)
     # Note: SFTTrainer can handle PEFT, but we apply it manually for logging
     model = apply_lora(model, config)
-    
+
     # Load datasets
     logger.info("Loading datasets...")
     train_dataset = load_dataset("json", data_files=train_dataset_path, split="train")
@@ -152,12 +168,18 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         val_dataset = load_dataset("json", data_files=val_dataset_path, split="train")
     else:
         val_dataset = None
-    
+
     # Format datasets
     logger.info("Formatting datasets...")
-    train_dataset = train_dataset.map(lambda x: format_foresight_sample(x, tokenizer), remove_columns=train_dataset.column_names)
+    train_dataset = train_dataset.map(
+        lambda x: format_foresight_sample(x, tokenizer),
+        remove_columns=train_dataset.column_names,
+    )
     if val_dataset:
-        val_dataset = val_dataset.map(lambda x: format_foresight_sample(x, tokenizer), remove_columns=val_dataset.column_names)
+        val_dataset = val_dataset.map(
+            lambda x: format_foresight_sample(x, tokenizer),
+            remove_columns=val_dataset.column_names,
+        )
 
     # Create training arguments - use SFTConfig for newer TRL
     training_args = SFTConfig(**config.to_training_args_dict())
@@ -170,32 +192,36 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         processing_class=tokenizer,
+        dataset_text_field="text",
     )
-    
+
     # Train
     logger.info("Starting training...")
     trainer.train()
-    
+
     # Save model
     logger.info("Saving model...")
     trainer.save_model(config.output_dir)
     tokenizer.save_pretrained(config.output_dir)
-    
+
     return config.output_dir
 
-def load_foresight_model(model_path: str, base_model_id: str = "meta-llama/Meta-Llama-3-8B") -> Tuple:
+
+def load_foresight_model(
+    model_path: str, base_model_id: str = "meta-llama/Meta-Llama-3-8B"
+) -> Tuple:
     """
     Load a trained Foresight model for inference.
     """
     if not _import_training_deps():
         raise ImportError("Training dependencies not installed.")
-    
+
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import PeftModel
-    
+
     # Check if model is a pre-quantized Unsloth model
     is_unsloth = "unsloth" in base_model_id.lower()
-    
+
     # Only use quantization_config for non-pre-quantized models
     if not is_unsloth:
         bnb_config = BitsAndBytesConfig(
@@ -206,30 +232,32 @@ def load_foresight_model(model_path: str, base_model_id: str = "meta-llama/Meta-
         )
     else:
         bnb_config = None
-    
+
     model_kwargs = {
         "device_map": "auto",
         "dtype": torch.float16,
     }
     if bnb_config is not None:
         model_kwargs["quantization_config"] = bnb_config
-    
+
     model = AutoModelForCausalLM.from_pretrained(
         base_model_id,
         **model_kwargs,
     )
-    
+
     # Load LoRA adapter
     model = PeftModel.from_pretrained(model, model_path)
-    
+
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    
+
     return model, tokenizer
+
 
 class ForesightPredictionHeads(nn.Module):
     """
     Optional prediction heads for structured forecasting outputs.
     """
+
     def __init__(self, hidden_size: int = 4096):
         super().__init__()
         self.release_timing = nn.Sequential(
@@ -245,9 +273,9 @@ class ForesightPredictionHeads(nn.Module):
         self.compute_budget = nn.Sequential(
             nn.Linear(hidden_size, 512),
             nn.GELU(),
-            nn.Linear(512, 1),   # Log(FLOPs)
+            nn.Linear(512, 1),  # Log(FLOPs)
         )
-    
+
     def forward(self, hidden_states):
         # Take representation from the last token of the context
         context_repr = hidden_states[:, -1, :]
@@ -257,17 +285,30 @@ class ForesightPredictionHeads(nn.Module):
             "compute_budget": self.compute_budget(context_repr),
         }
 
+
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Train Foresight model")
-    parser.add_argument("--train-dataset", type=str, required=True, help="Path to training dataset JSONL")
-    parser.add_argument("--val-dataset", type=str, default=None, help="Path to validation dataset JSONL")
-    parser.add_argument("--output-dir", type=str, default="models/foresight_final/", help="Output directory")
-    
+    parser.add_argument(
+        "--train-dataset",
+        type=str,
+        required=True,
+        help="Path to training dataset JSONL",
+    )
+    parser.add_argument(
+        "--val-dataset", type=str, default=None, help="Path to validation dataset JSONL"
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="models/foresight_final/",
+        help="Output directory",
+    )
+
     args = parser.parse_args()
-    
+
     from foresight.training.config import ForesightTrainingConfig
-    
+
     config = ForesightTrainingConfig(output_dir=args.output_dir)
     train_foresight(config, args.train_dataset, args.val_dataset)
