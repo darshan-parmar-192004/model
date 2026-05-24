@@ -124,24 +124,26 @@ def apply_lora(model, config):
     return model
 
 
-def format_foresight_sample(example: Dict, tokenizer) -> Dict:
+def make_format_func(tokenizer):
     """
-    Convert instruction-output JSONL format to SFTTrainer text format.
-    Format: <s>[INST] {instruction} [/INST] {output}</s>
+    Create a formatting function for SFTTrainer that converts examples to text.
+    SFTTrainer calls this on each example on-the-fly.
     """
-    messages = [
-        {
-            "role": "system",
-            "content": "You are Foresight, a predictive model forecasting AI industry events.",
-        },
-        {"role": "user", "content": example["instruction"]},
-        {"role": "assistant", "content": example["output"]},
-    ]
 
-    text = tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=False
-    )
-    return {"text": text}
+    def format_foresight_sample(example: Dict) -> str:
+        messages = [
+            {
+                "role": "system",
+                "content": "You are Foresight, a predictive model forecasting AI industry events.",
+            },
+            {"role": "user", "content": example["instruction"]},
+            {"role": "assistant", "content": example["output"]},
+        ]
+        return tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=False
+        )
+
+    return format_foresight_sample
 
 
 def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
@@ -169,17 +171,8 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     else:
         val_dataset = None
 
-    # Format datasets
-    logger.info("Formatting datasets...")
-    train_dataset = train_dataset.map(
-        lambda x: format_foresight_sample(x, tokenizer),
-        remove_columns=train_dataset.column_names,
-    )
-    if val_dataset:
-        val_dataset = val_dataset.map(
-            lambda x: format_foresight_sample(x, tokenizer),
-            remove_columns=val_dataset.column_names,
-        )
+    # Create formatting function (applied on-the-fly by SFTTrainer)
+    formatting_func = make_format_func(tokenizer)
 
     # Create training arguments - use SFTConfig for newer TRL
     training_args = SFTConfig(**config.to_training_args_dict())
@@ -191,9 +184,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        processing_class=tokenizer,
-        dataset_text_field="text",
-        max_seq_length=config.max_seq_length,
+        formatting_func=formatting_func,
     )
 
     # Train
