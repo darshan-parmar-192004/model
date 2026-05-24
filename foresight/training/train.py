@@ -193,6 +193,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         eval_dataset=val_dataset,
         processing_class=tokenizer,
         dataset_text_field="text",
+        max_seq_length=config.max_seq_length,
     )
 
     # Train

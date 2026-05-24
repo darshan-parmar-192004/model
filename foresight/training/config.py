@@ -80,5 +80,4 @@ class ForesightTrainingConfig:
             "dataloader_num_workers": 2,
             "report_to": "none",
             "run_name": self.run_name,
-            "max_seq_length": self.max_seq_length,
         }
