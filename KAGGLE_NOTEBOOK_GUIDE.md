@@ -1,10 +1,14 @@
-# Foresight Model Training on Kaggle - Complete Guide
+# Foresight Model Training - Colab / Kaggle Guide
 
 ## Cell 1 - Clone and Setup
 ```python
 # Clone the repository and set up working directory
 !git clone https://github.com/darshan-parmar-192004/model.git
-%cd model
+
+# --- Colab ---
+%cd /content/model
+# --- Kaggle (comment out if on Colab) ---
+# %cd /kaggle/working/model
 
 # Install huggingface_hub for Python-based login
 !pip install -q huggingface_hub
@@ -12,12 +16,16 @@
 
 ## Cell 2 - Hugging Face Login
 ```python
-# Login to Hugging Face using Python API (not CLI)
-from kaggle_secrets import UserSecretsClient
+# Login to Hugging Face
 from huggingface_hub import login
-import os
 
-hf_token = UserSecretsClient().get_secret("HF_TOKEN")
+# --- Colab ---
+from google.colab import userdata
+hf_token = userdata.get("HF_TOKEN")
+# --- Kaggle (comment out if on Colab) ---
+# from kaggle_secrets import UserSecretsClient
+# hf_token = UserSecretsClient().get_secret("HF_TOKEN")
+
 login(token=hf_token)
 print("Logged in to Hugging Face successfully!")
 ```
@@ -28,18 +36,23 @@ print("Logged in to Hugging Face successfully!")
 !pip install -r requirements.txt
 ```
 
-## Cell 4 - Configure Kaggle-Optimized Training
+## Cell 4 - Configure Training
 ```python
 import sys
-sys.path.insert(0, "/kaggle/working/model")
+
+# --- Colab ---
+sys.path.insert(0, "/content/model")
+# --- Kaggle (comment out if on Colab) ---
+# sys.path.insert(0, "/kaggle/working/model")
 
 from foresight.training.config import ForesightTrainingConfig
 
-# Kaggle-optimized config for ~16GB VRAM (T4/P100)
+# T4-optimized config (16GB VRAM)
 config = ForesightTrainingConfig(
-    model_id="unsloth/llama-3-8b-Instruct-bnb-4bit",  # 4-bit quantized for Kaggle
-    output_dir="/kaggle/working/foresight-model",
-    per_device_train_batch_size=1,       # Kaggle memory limit
+    model_id="unsloth/llama-3-8b-Instruct-bnb-4bit",  # 4-bit quantized
+    output_dir="/content/foresight-model",            # Colab
+    # output_dir="/kaggle/working/foresight-model",   # Kaggle
+    per_device_train_batch_size=1,       # Memory limit
     gradient_accumulation_steps=32,      # Compensate for small batch
     num_train_epochs=3,
     learning_rate=2e-4,
@@ -64,25 +77,29 @@ train_foresight(config, "data/train_dataset.jsonl", "data/val_dataset.jsonl")
 import zipfile
 import os
 
-!zip -r /kaggle/working/foresight_model.zip /kaggle/working/foresight-model/
+# --- Colab ---
+!zip -r /content/foresight_model.zip /content/foresight-model/
+# --- Kaggle (comment out if on Colab) ---
+# !zip -r /kaggle/working/foresight_model.zip /kaggle/working/foresight-model/
 
 from IPython.display import FileLink
-FileLink("/kaggle/working/foresight_model.zip")
+FileLink("/content/foresight_model.zip")
 ```
 
 ## Key Fixes Applied
 
 1. **HF CLI Error**: Replaced `huggingface-cli login` with Python API `huggingface_hub.login()`
 2. **Working Directory**: Added `%cd model` before installing requirements
-3. **Module Import**: Added `sys.path.insert(0, "/kaggle/working/model")` before imports
-4. **Requirements Path**: Now correctly finds `requirements.txt` after changing to `model` directory
-5. **Kaggle Memory**: Reduced `per_device_train_batch_size=1`, `gradient_accumulation_steps=32`, `max_seq_length=1024`
-6. **4-bit Model**: Using `unsloth/llama-3-8b-Instruct-bnb-4bit` for Kaggle VRAM constraints
+3. **Module Import**: Added `sys.path.insert` before imports
+4. **Requirements Path**: Uses `requirements.txt` after changing to `model` directory
+5. **Memory**: Reduced `per_device_train_batch_size=1`, `gradient_accumulation_steps=32`, `max_seq_length=1024`
+6. **4-bit Model**: Using `unsloth/llama-3-8b-Instruct-bnb-4bit` for VRAM constraints
 7. **compute_dtype**: Set to `float16` for T4 GPU compatibility
+8. **Colab support**: Added `google.colab.userdata` alternative for secrets
 
 ## Expected Output
 
 After running all cells:
 - 7,093 training samples
 - 35 validation samples  
-- Trained model saved to `/kaggle/working/foresight_model.zip` (~200MB LoRA adapter)
+- Trained model saved to `/content/foresight_model.zip` (~200MB LoRA adapter)
