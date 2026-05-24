@@ -23,12 +23,6 @@ class ForesightTrainingConfig:
         "q_proj", "k_proj", "v_proj", "o_proj",
         "gate_proj", "up_proj", "down_proj",
     ])
-    
-    # Llama-3 specific LoRA targets (uncomment if needed)
-    # lora_target_modules: List[str] = field(default_factory=lambda: [
-    #     "q_proj", "k_proj", "v_proj", "o_proj",
-    #     "gate_up_proj", "down_proj",
-    # ])
 
     # 4-bit quantization
     use_4bit: bool = True
@@ -42,17 +36,8 @@ class ForesightTrainingConfig:
     num_train_epochs: int = 3
     learning_rate: float = 2e-4
     lr_scheduler: str = "cosine"
-    warmup_ratio: float = 0.03
     max_grad_norm: float = 1.0
     optim: str = "paged_adamw_8bit"
-
-    # Context (reduced for 8B model efficiency)
-    max_context_length: int = 8192
-
-    # SFTTrainer specific
-    packing: bool = True
-    dataset_text_field: str = "text"
-    max_seq_length: int = 8192
 
     # Logging
     logging_steps: int = 25
@@ -60,7 +45,7 @@ class ForesightTrainingConfig:
     save_total_limit: int = 3
     report_to: str = "none"
     run_name: str = "foresight-v1"
-    warmup_steps: int = 10  # Explicitly set warmup steps instead of warmup_ratio
+    warmup_steps: int = 10  # Explicitly set warmup steps
 
     def to_training_args_dict(self) -> dict:
         """Convert to TrainingArguments dictionary."""

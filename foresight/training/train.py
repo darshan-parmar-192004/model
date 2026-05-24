@@ -142,6 +142,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     # Setup model and tokenizer
     logger.info("Setting up model and tokenizer...")
     model, tokenizer = setup_model_and_tokenizer(config)
+    # Note: SFTTrainer can handle PEFT, but we apply it manually for logging
     model = apply_lora(model, config)
     
     # Load datasets
