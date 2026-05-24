@@ -6,6 +6,9 @@ Uses SFTTrainer from TRL for efficient supervised fine-tuning.
 
 import math
 import logging
+import os
+import glob
+import re
 from typing import Tuple, Optional, List, Dict
 
 import torch
@@ -148,6 +151,18 @@ def make_format_func(tokenizer):
     return format_foresight_sample
 
 
+def find_latest_checkpoint(output_dir: str) -> Optional[str]:
+    checkpoint_dirs = glob.glob(os.path.join(output_dir, "checkpoint-*"))
+    if not checkpoint_dirs:
+        return None
+
+    def extract_step(path):
+        match = re.search(r"checkpoint-(\d+)$", path)
+        return int(match.group(1)) if match else 0
+
+    return max(checkpoint_dirs, key=extract_step)
+
+
 def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     """
     Train the Foresight model with QLoRA.
@@ -189,9 +204,15 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         formatting_func=formatting_func,
     )
 
+    # Check for existing checkpoint to resume from
+    checkpoint = find_latest_checkpoint(config.output_dir)
+    if checkpoint:
+        logger.info(f"Resuming from checkpoint: {checkpoint}")
+    else:
+        logger.info("No checkpoint found, starting fresh training...")
+
     # Train
-    logger.info("Starting training...")
-    trainer.train()
+    trainer.train(resume_from_checkpoint=checkpoint)
 
     # Save model
     logger.info("Saving model...")
