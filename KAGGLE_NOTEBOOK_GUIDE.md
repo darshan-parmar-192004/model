@@ -79,48 +79,59 @@ FileLink("/kaggle/working/foresight_model.zip")
 
 ---
 
-## Speed Up: Cache Model via Kaggle Dataset
+## Fast Mode: Cache Model via Kaggle Dataset
 
-Each new Kaggle session downloads the 8B model from Hugging Face (~10-15 min). **Cache it as a Kaggle Dataset** to load instantly on subsequent sessions.
+Each new Kaggle session downloads the 8B model from HF (~10-15 min). **Cache it once as a Kaggle Dataset** and load instantly forever.
 
-### One-Time Setup: Create the Dataset
+### Step 1: One-Time Setup — Create the Dataset
 
-Run this once in a **separate Kaggle notebook** (use any GPU runtime):
+Run this **once** in a new Kaggle notebook (any GPU runtime):
 
 ```python
-# 1. Install deps
-!pip install -q transformers torch
+# Cell 1 — Install & login
+!pip install -q huggingface_hub transformers torch
 
-# 2. Login to HF (if downloading from gated models)
+from kaggle_secrets import UserSecretsClient
 from huggingface_hub import login
-login(token="your_hf_token_here")  # or use Kaggle Secrets
+login(token=UserSecretsClient().get_secret("HF_TOKEN"))
+```
 
-# 3. Download and save the model
+```python
+# Cell 2 — Download model (takes 10-15 min, only once)
+import time, os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+t0 = time.time()
 model_id = "unsloth/llama-3-8b-Instruct-bnb-4bit"
 model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 
 save_path = "/kaggle/working/llama-3-8b-model/"
+os.makedirs(save_path, exist_ok=True)
 model.save_pretrained(save_path)
 tokenizer.save_pretrained(save_path)
-print(f"Model saved to {save_path}")
+print(f"✓ Model saved to {save_path} (took {time.time()-t0:.1f}s)")
 ```
 
-Then:
-1. Go to the notebook's sidebar → "Output" tab
-2. Click "Add to Dataset" → create a new dataset named `llama-3-8b-model`
-3. Set visibility to **Private** (it's ~8GB)
+After it finishes, in the Kaggle notebook sidebar → **Output** tab → **Add to Dataset**:
+- Name: `llama-3-8b-model`
+- Visibility: **Private**
+- This creates `https://kaggle.com/datasets/YOUR_USERNAME/llama-3-8b-model`
 
-### Use the Cached Model in Training
+### Step 2: Update Your Training Cells
 
-Add `local_model_path` to your config in Cell 2:
+Just **change two lines** in your existing notebook:
 
+**Cell 1 — Add this after `!git clone`**:
+```python
+!kaggle datasets download YOUR_USERNAME/llama-3-8b-model --unzip -p /kaggle/input/llama-3-8b-model/
+```
+
+**Cell 2 — Add `local_model_path`** to the config:
 ```python
 config = ForesightTrainingConfig(
     model_id="unsloth/llama-3-8b-Instruct-bnb-4bit",
-    local_model_path="/kaggle/input/llama-3-8b-model/",  # ← add this
+    local_model_path="/kaggle/input/llama-3-8b-model/",  # ← one new line
     output_dir="/kaggle/working/foresight-model",
     hub_model_id="darshan8823/foresight-checkpoints",
     push_to_hub=True,
@@ -135,11 +146,8 @@ config = ForesightTrainingConfig(
 )
 ```
 
-Also add this line to Cell 1 to mount the dataset:
-```python
-# Add after the git clone, before pip install
-!kaggle datasets download darshan8823/llama-3-8b-model --unzip -p /kaggle/input/llama-3-8b-model/
+That's it. Next run you'll see:
 ```
-
-If the dataset is present, you'll see: `Loading model from local path: /kaggle/input/llama-3-8b-model/`
-If not, it falls back automatically to Hugging Face download with a clear message.
+INFO: Loading model from local path: /kaggle/input/llama-3-8b-model/
+```
+instead of a 15-minute wait. If the dataset is missing, it falls back to HF automatically.

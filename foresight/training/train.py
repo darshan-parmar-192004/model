@@ -47,10 +47,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def setup_model_and_tokenizer(config):
-    """
-    Setup model and tokenizer for training.
-    """
+def setup_model_and_tokenizer(config, model_path=None):
+    actual_model_path = model_path if model_path else config.model_id
+
     if not _import_training_deps():
         raise ImportError(
             "Training dependencies not installed. Install with: pip install transformers peft trl datasets bitsandbytes"
@@ -59,7 +58,7 @@ def setup_model_and_tokenizer(config):
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import prepare_model_for_kbit_training
 
-    # Check if model is a pre-quantized Unsloth model
+    # Check if original model is a pre-quantized Unsloth model (use config.model_id, not local path)
     is_unsloth = "unsloth" in config.model_id.lower()
 
     # Only use quantization_config for non-pre-quantized models
@@ -84,7 +83,7 @@ def setup_model_and_tokenizer(config):
         model_kwargs["quantization_config"] = bnb_config
 
     model = AutoModelForCausalLM.from_pretrained(
-        config.model_id,
+        actual_model_path,
         **model_kwargs,
     )
 
@@ -97,7 +96,7 @@ def setup_model_and_tokenizer(config):
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
-        config.model_id,
+        actual_model_path,
         padding_side="right",
         add_eos_token=True,
     )
@@ -188,9 +187,10 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
 
     # Resolve model source (local path vs Hugging Face)
     if config.local_model_path and os.path.isdir(config.local_model_path):
-        logger.info(f"Loading model from local path: {config.local_model_path}")
-        config.model_id = config.local_model_path
+        model_path = config.local_model_path
+        logger.info(f"Loading model from local path: {model_path}")
     else:
+        model_path = config.model_id
         if config.local_model_path:
             logger.warning(f"Local model path '{config.local_model_path}' not found, falling back to Hugging Face")
         logger.info("Downloading model from Hugging Face (this may take 10-15 minutes)...")
@@ -198,7 +198,7 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     # Setup model and tokenizer
     logger.info("Setting up model and tokenizer...")
     t0 = time.time()
-    model, tokenizer = setup_model_and_tokenizer(config)
+    model, tokenizer = setup_model_and_tokenizer(config, model_path=model_path)
     elapsed = time.time() - t0
     logger.info(f"Model loaded successfully (took {elapsed:.1f}s)")
     model = apply_lora(model, config)
