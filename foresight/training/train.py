@@ -89,8 +89,9 @@ def setup_model_and_tokenizer(config):
     # Set max_length to user-requested seq length for SFTTrainer fallback
     model.config.max_length = config.max_seq_length
 
-    # Prepare model for k-bit training
-    model = prepare_model_for_kbit_training(model)
+    # Prepare model for k-bit training (skip for Unsloth — they're pre-optimized)
+    if not is_unsloth:
+        model = prepare_model_for_kbit_training(model)
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
