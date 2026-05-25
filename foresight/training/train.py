@@ -9,7 +9,9 @@ import logging
 import os
 import glob
 import re
+import time
 from typing import Tuple, Optional, List, Dict
+import concurrent.futures
 
 import torch
 from torch import nn
@@ -153,6 +155,14 @@ def make_format_func(tokenizer):
     return format_foresight_sample
 
 
+def _hub_has_checkpoints(api, repo_id: str, token: Optional[str] = None) -> bool:
+    try:
+        files = api.list_repo_files(repo_id, token=token)
+        return any(f.startswith("checkpoint-") for f in files)
+    except Exception:
+        return False
+
+
 def find_latest_checkpoint(output_dir: str) -> Optional[str]:
     checkpoint_dirs = glob.glob(os.path.join(output_dir, "checkpoint-*"))
     if not checkpoint_dirs:
@@ -176,9 +186,21 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     from trl import SFTTrainer, SFTConfig
     from datasets import load_dataset
 
+    # Resolve model source (local path vs Hugging Face)
+    if config.local_model_path and os.path.isdir(config.local_model_path):
+        logger.info(f"Loading model from local path: {config.local_model_path}")
+        config.model_id = config.local_model_path
+    else:
+        if config.local_model_path:
+            logger.warning(f"Local model path '{config.local_model_path}' not found, falling back to Hugging Face")
+        logger.info("Downloading model from Hugging Face (this may take 10-15 minutes)...")
+
     # Setup model and tokenizer
     logger.info("Setting up model and tokenizer...")
+    t0 = time.time()
     model, tokenizer = setup_model_and_tokenizer(config)
+    elapsed = time.time() - t0
+    logger.info(f"Model loaded successfully (took {elapsed:.1f}s)")
     model = apply_lora(model, config)
 
     # Load datasets
@@ -211,17 +233,42 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
 
         if config.push_to_hub and config.hub_model_id:
             api = HfApi()
+            token = os.environ.get("HF_TOKEN")
             try:
                 api.model_info(config.hub_model_id)
-                logger.info(f"Downloading remote checkpoints from {config.hub_model_id}...")
-                snapshot_download(
-                    repo_id=config.hub_model_id,
-                    local_dir=config.output_dir,
-                    allow_patterns="checkpoint-*",
-                    token=os.environ.get("HF_TOKEN"),
-                )
             except Exception:
                 logger.info(f"No remote hub repo found at {config.hub_model_id}, will create during training")
+                api = None
+
+            if api is not None:
+                logger.info(f"Checking for remote checkpoints at {config.hub_model_id}...")
+                try:
+                    with concurrent.futures.ThreadPoolExecutor() as pool:
+                        future = pool.submit(_hub_has_checkpoints, api, config.hub_model_id, token)
+                        has_checkpoints = future.result(timeout=15)
+                except concurrent.futures.TimeoutError:
+                    logger.warning("Hub check timed out, skipping remote checkpoint download")
+                    has_checkpoints = False
+                except Exception:
+                    logger.warning("Hub check failed, skipping remote checkpoint download")
+                    has_checkpoints = False
+
+                if has_checkpoints:
+                    logger.info(f"Downloading remote checkpoints from {config.hub_model_id}...")
+                    try:
+                        with concurrent.futures.ThreadPoolExecutor() as pool:
+                            future = pool.submit(
+                                snapshot_download,
+                                repo_id=config.hub_model_id,
+                                local_dir=config.output_dir,
+                                allow_patterns="checkpoint-*",
+                                token=token,
+                            )
+                            future.result(timeout=120)
+                    except concurrent.futures.TimeoutError:
+                        logger.warning("Checkpoint download timed out, proceeding with local checkpoints only")
+                else:
+                    logger.info("No remote checkpoints found, proceeding with local checkpoints only")
     except ImportError:
         logger.info("huggingface_hub not installed, skipping remote checkpoint download")
 

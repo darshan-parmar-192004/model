@@ -14,6 +14,7 @@ class ForesightTrainingConfig:
 
     # Model settings
     model_id: str = "unsloth/llama-3-8b-Instruct-bnb-4bit"
+    local_model_path: str = ""
     output_dir: str = "models/foresight_final/"
 
     # QLoRA settings - lower rank for 8B model
