@@ -93,8 +93,6 @@ class ForesightTrainingConfig:
             "dataloader_pin_memory": False,
             "report_to": "none",
             "run_name": self.run_name,
-            "packing": True,
-            "max_seq_length": self.max_seq_length,
         }
         if self.push_to_hub and self.hub_model_id:
             d["hub_model_id"] = self.hub_model_id
