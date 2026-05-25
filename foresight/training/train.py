@@ -6,6 +6,7 @@ Uses SFTTrainer from TRL for efficient supervised fine-tuning.
 
 import math
 import logging
+import os
 import glob
 import re
 from typing import Tuple, Optional, List, Dict

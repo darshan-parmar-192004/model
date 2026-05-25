@@ -94,7 +94,9 @@ class ForesightTrainingConfig:
             d["hub_model_id"] = self.hub_model_id
             d["hub_strategy"] = self.hub_strategy
             d["push_to_hub"] = True
-            d["hub_token"] = os.environ.get("HF_TOKEN")
+            hf_token = os.environ.get("HF_TOKEN")
+            if hf_token:
+                d["hub_token"] = hf_token
         if self.fp16:
             d["fp16"] = True
         if self.bf16:
