@@ -203,8 +203,6 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         formatting_func=formatting_func,
-        packing=True,
-        max_seq_length=config.max_seq_length,
     )
 
     # Download remote checkpoints from HF Hub so resume works across Kaggle sessions
