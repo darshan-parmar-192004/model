@@ -71,12 +71,13 @@ def setup_model_and_tokenizer(config):
     else:
         bnb_config = None
 
-    # Load model
+    # Load model — Unsloth models are already pre-quantized, skip dtype override
     model_kwargs = {
         "device_map": "auto",
-        "dtype": torch.float16,
         "use_cache": False,
     }
+    if not is_unsloth:
+        model_kwargs["torch_dtype"] = torch.float16
     if bnb_config is not None:
         model_kwargs["quantization_config"] = bnb_config
 
@@ -269,8 +270,9 @@ def load_foresight_model(
 
     model_kwargs = {
         "device_map": "auto",
-        "dtype": torch.float16,
     }
+    if not is_unsloth:
+        model_kwargs["torch_dtype"] = torch.float16
     if bnb_config is not None:
         model_kwargs["quantization_config"] = bnb_config
 

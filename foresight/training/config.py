@@ -45,15 +45,16 @@ class ForesightTrainingConfig:
     learning_rate: float = 2e-4
     lr_scheduler: str = "cosine"
     max_grad_norm: float = 1.0
-    optim: str = "paged_adamw_8bit"
+    optim: str = "adamw_8bit"
 
     # Logging
-    logging_steps: int = 25
+    logging_steps: int = 5
     save_steps: int = 200
     save_total_limit: int = 3
     report_to: str = "none"
     run_name: str = "foresight-v1"
-    warmup_steps: int = 10  # Explicitly set warmup steps
+    warmup_steps: int = 10
+    logging_first_step: bool = True
 
     # Sequence length settings
     max_seq_length: int = 1024
@@ -79,14 +80,17 @@ class ForesightTrainingConfig:
             "lr_scheduler_type": self.lr_scheduler,
             "warmup_steps": self.warmup_steps,
             "logging_steps": self.logging_steps,
+            "logging_first_step": self.logging_first_step,
             "save_strategy": "steps",
             "save_steps": self.save_steps,
             "save_total_limit": self.save_total_limit,
             "gradient_checkpointing": True,
+            "gradient_checkpointing_kwargs": {"use_reentrant": False},
             "max_grad_norm": self.max_grad_norm,
             "optim": self.optim,
             "remove_unused_columns": False,
-            "dataloader_num_workers": 2,
+            "dataloader_num_workers": 0,
+            "dataloader_pin_memory": False,
             "report_to": "none",
             "run_name": self.run_name,
         }
