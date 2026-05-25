@@ -3,6 +3,7 @@
 Training configuration for Project Foresight.
 """
 
+import os
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -58,6 +59,11 @@ class ForesightTrainingConfig:
     max_seq_length: int = 1024
     max_context_length: int = 1024
 
+    # Hugging Face Hub persistence — enables resume across Kaggle sessions
+    hub_model_id: str = ""
+    push_to_hub: bool = False
+    hub_strategy: str = "every_save"
+
     # Mixed precision (off by default for 4-bit models — precision is internal)
     fp16: bool = False
     bf16: bool = False
@@ -84,6 +90,11 @@ class ForesightTrainingConfig:
             "report_to": "none",
             "run_name": self.run_name,
         }
+        if self.push_to_hub and self.hub_model_id:
+            d["hub_model_id"] = self.hub_model_id
+            d["hub_strategy"] = self.hub_strategy
+            d["push_to_hub"] = True
+            d["hub_token"] = os.environ.get("HF_TOKEN")
         if self.fp16:
             d["fp16"] = True
         if self.bf16:

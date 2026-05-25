@@ -6,7 +6,6 @@ Uses SFTTrainer from TRL for efficient supervised fine-tuning.
 
 import math
 import logging
-import os
 import glob
 import re
 from typing import Tuple, Optional, List, Dict
@@ -177,7 +176,6 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
     # Setup model and tokenizer
     logger.info("Setting up model and tokenizer...")
     model, tokenizer = setup_model_and_tokenizer(config)
-    # Note: SFTTrainer can handle PEFT, but we apply it manually for logging
     model = apply_lora(model, config)
 
     # Load datasets
@@ -204,7 +202,27 @@ def train_foresight(config, train_dataset_path, val_dataset_path=None) -> str:
         formatting_func=formatting_func,
     )
 
-    # Check for existing checkpoint to resume from
+    # Download remote checkpoints from HF Hub so resume works across Kaggle sessions
+    try:
+        from huggingface_hub import snapshot_download, HfApi
+
+        if config.push_to_hub and config.hub_model_id:
+            api = HfApi()
+            try:
+                api.model_info(config.hub_model_id)
+                logger.info(f"Downloading remote checkpoints from {config.hub_model_id}...")
+                snapshot_download(
+                    repo_id=config.hub_model_id,
+                    local_dir=config.output_dir,
+                    allow_patterns="checkpoint-*",
+                    token=os.environ.get("HF_TOKEN"),
+                )
+            except Exception:
+                logger.info(f"No remote hub repo found at {config.hub_model_id}, will create during training")
+    except ImportError:
+        logger.info("huggingface_hub not installed, skipping remote checkpoint download")
+
+    # Check for existing checkpoint to resume from (now includes downloaded ones)
     checkpoint = find_latest_checkpoint(config.output_dir)
     if checkpoint:
         logger.info(f"Resuming from checkpoint: {checkpoint}")

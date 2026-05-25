@@ -1,64 +1,53 @@
 # Foresight Model Training on Kaggle - Complete Guide
 
-> Training auto-resumes from checkpoints if interrupted (e.g. session timeout).
+> Training auto-resumes **across Kaggle sessions** via Hugging Face Hub checkpoint sync.
 > Kaggle gives 30h/week GPU — enough for multiple retries.
+> Checkpoints are pushed to HF Hub every `save_steps` and pulled on next session.
 
 ---
 
-## First Run — Run all cells in order
+## Only 2 Cells Needed — Run Both, Every Time, In Order
 
-### Cell 1 - Clone and Setup
+### Cell 1 — Setup (clone repo, install deps, login to HF)
 ```python
 !git clone https://github.com/darshan-parmar-192004/model.git
-%cd /kaggle/working/model
+%cd /kaggle/working/model/foresight
 !pip install -q huggingface_hub
-```
+!pip install -r requirements.txt
 
-### Cell 2 - Hugging Face Login
-```python
 from kaggle_secrets import UserSecretsClient
 from huggingface_hub import login
-
-hf_token = UserSecretsClient().get_secret("HF_TOKEN")
-login(token=hf_token)
-print("Logged in to Hugging Face successfully!")
+token = UserSecretsClient().get_secret("HF_TOKEN")
+login(token=token)
 ```
 
-### Cell 3 - Install Requirements
-```python
-!pip install -r requirements.txt
-```
-
-### Cell 4 - Configure Training
+### Cell 2 — Train (auto-detects fresh or resume)
 ```python
 import sys
-sys.path.insert(0, "/kaggle/working/model")
+sys.path.insert(0, "/kaggle/working/model/foresight")
 
 from foresight.training.config import ForesightTrainingConfig
+from foresight.training.train import train_foresight
 
 config = ForesightTrainingConfig(
     model_id="unsloth/llama-3-8b-Instruct-bnb-4bit",
     output_dir="/kaggle/working/foresight-model",
+    hub_model_id="darshan8823/foresight-checkpoints",
+    push_to_hub=True,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=32,
     num_train_epochs=3,
     learning_rate=2e-4,
     max_seq_length=1024,
-    max_context_length=1024,
     lora_r=8,
     lora_alpha=32,
     compute_dtype="float16",
 )
-```
-
-### Cell 5 - Train the Model (auto-resumes if interrupted)
-```python
-from foresight.training.train import train_foresight
 
 train_foresight(config, "data/train_dataset.jsonl", "data/val_dataset.jsonl")
 ```
 
-### Cell 6 - Save and Download Model
+### Cell 3 (Optional) — Download final model zip
 ```python
 !zip -r /kaggle/working/foresight_model.zip /kaggle/working/foresight-model/
 
@@ -68,46 +57,22 @@ FileLink("/kaggle/working/foresight_model.zip")
 
 ---
 
-## Resume Run — If session disconnected mid-training
+## How Resume Works
 
-If Kaggle disconnects, restart from **Cell 1** (to clone the repo + download model again).
-The weights download each time, but `train_foresight` automatically detects the
-existing checkpoint in `/kaggle/working/foresight-model/` and resumes from there.
+| Session | What happens |
+|---|---|
+| **Session 1** | Trains from scratch, pushes `checkpoint-200`, `checkpoint-400`, etc. to `darshan8823/foresight-checkpoints` on HF Hub |
+| **Session 2+** | Cell 2 downloads all checkpoints from HF Hub → finds latest → resumes from exact step → continues pushing |
 
-You do NOT need to change anything — Cells 4 + 5 will pick up where you left off
-because the checkpoint folder is persistent within the Kaggle session.
-
-### Quick Resume (if repo already cloned in session)
-```python
-import sys
-sys.path.insert(0, "/kaggle/working/model")
-
-from foresight.training.config import ForesightTrainingConfig
-from foresight.training.train import train_foresight
-
-config = ForesightTrainingConfig(
-    model_id="unsloth/llama-3-8b-Instruct-bnb-4bit",
-    output_dir="/kaggle/working/foresight-model",
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=32,
-    num_train_epochs=3,
-    learning_rate=2e-4,
-    max_seq_length=1024,
-    max_context_length=1024,
-    lora_r=8,
-    lora_alpha=32,
-    compute_dtype="float16",
-)
-
-# Auto-detects checkpoint and resumes
-train_foresight(config, "data/train_dataset.jsonl", "data/val_dataset.jsonl")
-```
+**Requirements:**
+1. HF secret `HF_TOKEN` in Kaggle Secrets (add via Notebook → Add-ons → Secrets)
+2. Create an empty HF model repo `darshan8823/foresight-checkpoints` at https://huggingface.co/new
 
 ---
 
 ## Expected Output
 
-After training completes:
-- 7,093 training samples, 35 validation samples
+- 7,093 training samples, 35 validation samples  
 - Model saved to `/kaggle/working/foresight_model.zip` (~200MB LoRA adapter)
-- Logs will show: `Resuming from checkpoint: ...` or `No checkpoint found, starting fresh`
+- Logs on first run: `No checkpoint found, starting fresh training...`
+- Logs on resume: `Downloading remote checkpoints from darshan8823/foresight-checkpoints...` → `Resuming from checkpoint: /kaggle/working/foresight-model/checkpoint-XXX`
